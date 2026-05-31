@@ -1,0 +1,24 @@
+{
+  "name": "noteforge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline-first note editor with Excalidraw, microservices backend",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:gateway": "npm run dev --workspace=packages/gateway",
+    "dev:auth": "npm run dev --workspace=packages/auth-service",
+    "dev:notes": "npm run dev --workspace=packages/notes-service",
+    "dev:media": "npm run dev --workspace=packages/media-service",
+    "dev:web": "npm run dev --workspace=packages/web",
+    "dev:services": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:notes\" \"npm run dev:media\"",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "db:migrate": "npm run migrate --workspace=packages/auth-service && npm run migrate --workspace=packages/notes-service"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

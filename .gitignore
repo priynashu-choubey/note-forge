@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+packages/media-service/storage/
+postgres_data/
+redis_data/
+.DS_Store
