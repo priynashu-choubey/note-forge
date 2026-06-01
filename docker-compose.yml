@@ -6,6 +6,7 @@ services:
     container_name: noteforge-postgres
     mem_limit: 512m
     memswap_limit: 512m
+    shm_size: 128m
     restart: on-failure
     ports:
       - "5432:5432"
@@ -16,109 +17,43 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/db-init:/docker-entrypoint-initdb.d
+    command: [
+      "postgres",
+      "-c", "shared_buffers=128MB",
+      "-c", "work_mem=4MB",
+      "-c", "max_connections=20"
+    ]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U noteforge"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: noteforge-redis
-    mem_limit: 256m
-    memswap_limit: 256m
-    restart: on-failure
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+  # ─── Consolidated API Monolith ────────────────────────────────────────────────
 
-  # ─── Backend Services ─────────────────────────────────────────────────────────
-
-  auth-service:
+  api:
     build:
-      context: ./packages/auth-service
+      context: ./packages/api
       dockerfile: Dockerfile
-    container_name: noteforge-auth
+    container_name: noteforge-api
     mem_limit: 256m
     memswap_limit: 256m
     restart: on-failure
     ports:
-      - "3001:3001"
+      - "3000:3000"
     environment:
-      PORT: 3001
+      PORT: 3000
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: auth_db
+      DB_AUTH_NAME: auth_db
+      DB_NOTES_NAME: notes_db
       DB_USER: noteforge
       DB_PASSWORD: noteforge_secret
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-noteforge-access-secret-change-in-prod}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-noteforge-refresh-secret-change-in-prod}
       JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
       JWT_REFRESH_EXPIRY_DAYS: ${JWT_REFRESH_EXPIRY_DAYS:-7}
-      NODE_ENV: ${NODE_ENV:-development}
-      NODE_OPTIONS: --max-old-space-size=192
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  notes-service:
-    build:
-      context: ./packages/notes-service
-      dockerfile: Dockerfile
-    container_name: noteforge-notes
-    mem_limit: 256m
-    memswap_limit: 256m
-    restart: on-failure
-    ports:
-      - "3002:3002"
-    environment:
-      PORT: 3002
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: notes_db
-      DB_USER: noteforge
-      DB_PASSWORD: noteforge_secret
-      NODE_ENV: ${NODE_ENV:-development}
-      NODE_OPTIONS: --max-old-space-size=192
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  media-service:
-    build:
-      context: ./packages/media-service
-      dockerfile: Dockerfile
-    container_name: noteforge-media
-    mem_limit: 256m
-    memswap_limit: 256m
-    restart: on-failure
-    ports:
-      - "3003:3003"
-    environment:
-      PORT: 3003
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: notes_db
-      DB_USER: noteforge
-      DB_PASSWORD: noteforge_secret
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       STORAGE_PATH: /app/storage
       NODE_ENV: ${NODE_ENV:-development}
       NODE_OPTIONS: --max-old-space-size=192
@@ -128,48 +63,12 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
-  gateway:
-    build:
-      context: ./packages/gateway
-      dockerfile: Dockerfile
-    container_name: noteforge-gateway
-    mem_limit: 256m
-    memswap_limit: 256m
-    restart: on-failure
-    ports:
-      - "3000:3000"
-    environment:
-      PORT: 3000
-      AUTH_SERVICE_URL: http://auth-service:3001
-      NOTES_SERVICE_URL: http://notes-service:3002
-      MEDIA_SERVICE_URL: http://media-service:3003
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-noteforge-access-secret-change-in-prod}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-      NODE_ENV: ${NODE_ENV:-development}
-      NODE_OPTIONS: --max-old-space-size=192
-    depends_on:
-      auth-service:
-        condition: service_healthy
-      notes-service:
-        condition: service_healthy
-      media-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-
-
-
 volumes:
   postgres_data:
-  redis_data:
   media_storage:

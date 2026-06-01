@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
-import { query } from '../db/connection.js';
+import { query } from '../db/authDb.js';
 import {
   generateAccessToken,
   generateRefreshToken,

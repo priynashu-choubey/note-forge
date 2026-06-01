@@ -1,6 +1,4 @@
-import jwt from 'jsonwebtoken';
-
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'noteforge-access-secret-dev';
+import { verifyAccessToken } from '../utils/jwt.js';
 
 export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -12,7 +10,7 @@ export const authMiddleware = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, ACCESS_SECRET);
+    const payload = verifyAccessToken(token);
     req.user = {
       userId: payload.userId,
       email: payload.email,

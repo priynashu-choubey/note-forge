@@ -5,10 +5,10 @@ const { Pool } = pg;
 export const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'notes_db',
+  database: process.env.DB_NOTES_NAME || 'notes_db',
   user: process.env.DB_USER || 'noteforge',
   password: process.env.DB_PASSWORD || 'noteforge_secret',
-  max: 20,
+  max: 15, // Max pool size is tuned for low memory
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });

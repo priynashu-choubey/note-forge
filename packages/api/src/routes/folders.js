@@ -1,16 +1,11 @@
 import { Router } from 'express';
-import { query } from '../db/connection.js';
+import { query } from '../db/notesDb.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-const requireUser = (req, res, next) => {
-  if (!req.user?.userId) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
-
-router.use(requireUser);
+// Require authenticated user for all routes
+router.use(authMiddleware);
 
 // GET /folders — List folders (tree)
 router.get('/', async (req, res, next) => {

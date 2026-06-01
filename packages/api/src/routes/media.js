@@ -4,10 +4,14 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../db/connection.js';
+import { query } from '../db/notesDb.js';
 import { getFilePath, getThumbnailPath, deleteFile, deleteThumbnail, getStoragePath } from '../utils/storage.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
+
+// Require authenticated user for all routes
+router.use(authMiddleware);
 
 // Multer configuration
 const storage = multer.diskStorage({
@@ -35,15 +39,6 @@ const upload = multer({
     }
   },
 });
-
-const requireUser = (req, res, next) => {
-  if (!req.user?.userId) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  next();
-};
-
-router.use(requireUser);
 
 // POST /media/upload
 router.post('/upload', upload.single('file'), async (req, res, next) => {

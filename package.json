@@ -7,16 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:gateway": "npm run dev --workspace=packages/gateway",
-    "dev:auth": "npm run dev --workspace=packages/auth-service",
-    "dev:notes": "npm run dev --workspace=packages/notes-service",
-    "dev:media": "npm run dev --workspace=packages/media-service",
+    "dev:api": "npm run dev --workspace=packages/api",
     "dev:web": "npm run dev --workspace=packages/web",
-    "dev:services": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:notes\" \"npm run dev:media\"",
+    "dev:services": "npm run dev:api",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:reset": "docker compose down -v && docker compose up -d",
-    "db:migrate": "npm run migrate --workspace=packages/auth-service && npm run migrate --workspace=packages/notes-service"
+    "docker:reset": "docker compose down -v && docker compose up -d"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
